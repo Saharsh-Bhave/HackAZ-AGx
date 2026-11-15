@@ -1,0 +1,113 @@
+"""SQLite audit-log persistence for spray assessments."""
+
+from __future__ import annotations
+
+import csv
+import io
+import json
+import sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+from .models import ApplicationSettings, Assessment, WeatherReading
+
+DEFAULT_DB_PATH = Path("data/driftguard.db")
+
+
+def initialize_database(db_path: Path = DEFAULT_DB_PATH) -> None:
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(db_path) as connection:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assessments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                recorded_at TEXT NOT NULL,
+                lower_temp_f REAL NOT NULL,
+                upper_temp_f REAL NOT NULL,
+                lower_wind_mph REAL NOT NULL,
+                upper_wind_mph REAL NOT NULL,
+                lower_direction_deg REAL NOT NULL,
+                upper_direction_deg REAL NOT NULL,
+                product_name TEXT NOT NULL,
+                volatility TEXT NOT NULL,
+                droplet_size TEXT NOT NULL,
+                status TEXT NOT NULL,
+                inversion_delta_f REAL NOT NULL,
+                wind_speed_delta_mph REAL NOT NULL,
+                wind_direction_delta_deg REAL NOT NULL,
+                alert_codes TEXT NOT NULL,
+                reasons TEXT NOT NULL
+            )
+            """
+        )
+
+
+def save_assessment(
+    reading: WeatherReading,
+    application: ApplicationSettings,
+    assessment: Assessment,
+    db_path: Path = DEFAULT_DB_PATH,
+) -> str:
+    initialize_database(db_path)
+    recorded_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    with sqlite3.connect(db_path) as connection:
+        connection.execute(
+            """
+            INSERT INTO assessments (
+                recorded_at, lower_temp_f, upper_temp_f, lower_wind_mph,
+                upper_wind_mph, lower_direction_deg, upper_direction_deg,
+                product_name, volatility, droplet_size, status,
+                inversion_delta_f, wind_speed_delta_mph,
+                wind_direction_delta_deg, alert_codes, reasons
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                recorded_at,
+                reading.lower_temp_f,
+                reading.upper_temp_f,
+                reading.lower_wind_mph,
+                reading.upper_wind_mph,
+                reading.lower_direction_deg,
+                reading.upper_direction_deg,
+                application.product_name,
+                application.volatility.value,
+                application.droplet_size.value,
+                assessment.status.name,
+                assessment.inversion_delta_f,
+                assessment.wind_speed_delta_mph,
+                assessment.wind_direction_delta_deg,
+                json.dumps([alert.code for alert in assessment.alerts]),
+                json.dumps([alert.explanation for alert in assessment.alerts]),
+            ),
+        )
+    return recorded_at
+
+
+def get_assessments(
+    status: str | None = None,
+    limit: int = 200,
+    db_path: Path = DEFAULT_DB_PATH,
+) -> list[dict[str, Any]]:
+    initialize_database(db_path)
+    query = "SELECT * FROM assessments"
+    parameters: list[Any] = []
+    if status and status != "All":
+        query += " WHERE status = ?"
+        parameters.append(status)
+    query += " ORDER BY recorded_at DESC LIMIT ?"
+    parameters.append(limit)
+
+    with sqlite3.connect(db_path) as connection:
+        connection.row_factory = sqlite3.Row
+        return [dict(row) for row in connection.execute(query, parameters).fetchall()]
+
+
+def assessments_to_csv(records: list[dict[str, Any]]) -> str:
+    if not records:
+        return ""
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=records[0].keys())
+    writer.writeheader()
+    writer.writerows(records)
+    return output.getvalue()

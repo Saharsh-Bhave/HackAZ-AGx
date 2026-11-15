@@ -1,0 +1,75 @@
+{
+  "disclaimer": "Fictional products with illustrative values for a prototype. Real limits come from the product label and local regulations.",
+  "droplet_classes": [
+    "Fine",
+    "Medium",
+    "Coarse",
+    "Very Coarse"
+  ],
+  "products": [
+    {
+      "product_id": "P1",
+      "name": "OrchardGuard 4F",
+      "type": "fungicide",
+      "formulation": "flowable",
+      "volatility": "low",
+      "vapor_pressure_mpa_25c": 0.002,
+      "label_min_wind_mph": 3,
+      "label_max_wind_mph": 10,
+      "label_max_temp_f": 90,
+      "inversion_spray_prohibited": true,
+      "required_droplet_class": "Medium",
+      "buffer_zone_ft": 25,
+      "post_application_monitoring_hours": 2,
+      "reentry_interval_hours": 12
+    },
+    {
+      "product_id": "P2",
+      "name": "MiteStop EC",
+      "type": "miticide",
+      "formulation": "emulsifiable concentrate",
+      "volatility": "medium",
+      "vapor_pressure_mpa_25c": 0.8,
+      "label_min_wind_mph": 3,
+      "label_max_wind_mph": 10,
+      "label_max_temp_f": 85,
+      "inversion_spray_prohibited": true,
+      "required_droplet_class": "Medium",
+      "buffer_zone_ft": 50,
+      "post_application_monitoring_hours": 6,
+      "reentry_interval_hours": 24
+    },
+    {
+      "product_id": "P3",
+      "name": "VaporMax 2E",
+      "type": "herbicide",
+      "formulation": "ester",
+      "volatility": "high",
+      "vapor_pressure_mpa_25c": 24.0,
+      "label_min_wind_mph": 3,
+      "label_max_wind_mph": 8,
+      "label_max_temp_f": 80,
+      "inversion_spray_prohibited": true,
+      "required_droplet_class": "Coarse",
+      "buffer_zone_ft": 150,
+      "post_application_monitoring_hours": 24,
+      "reentry_interval_hours": 48
+    },
+    {
+      "product_id": "P4",
+      "name": "DormantShield Oil",
+      "type": "dormant oil",
+      "formulation": "oil",
+      "volatility": "low",
+      "vapor_pressure_mpa_25c": 0.001,
+      "label_min_wind_mph": 3,
+      "label_max_wind_mph": 10,
+      "label_max_temp_f": 85,
+      "inversion_spray_prohibited": true,
+      "required_droplet_class": "Coarse",
+      "buffer_zone_ft": 25,
+      "post_application_monitoring_hours": 2,
+      "reentry_interval_hours": 12
+    }
+  ]
+}

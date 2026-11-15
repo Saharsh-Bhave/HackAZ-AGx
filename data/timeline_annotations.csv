@@ -1,0 +1,21 @@
+start_time,end_time,label,ground_station_looks_ok,intended_hazards,description
+2026-11-11T00:00:00-08:00,2026-11-11T08:30:00-08:00,calm_inversion,no,inversion;wind_below_3mph,"Clear, still night. Strong inversion and near-calm wind at every height."
+2026-11-11T10:00:00-08:00,2026-11-11T15:30:00-08:00,safe_window,yes,,"Sunny, well-mixed air. No inversion, steady NW wind inside 3-10 mph, little shear."
+2026-11-11T16:20:00-08:00,2026-11-11T23:55:00-08:00,evening_inversion,no,inversion;wind_below_3mph,Inversion forms about half an hour before sunset as the wind dies.
+2026-11-12T05:00:00-08:00,2026-11-12T08:30:00-08:00,hidden_inversion,yes,inversion;wind_direction_shear;wind_speed_shear,"PRIMARY DEMO. Easterly 4-5 mph breeze at ground level looks fine, but air at 30 ft is 3-5 F warmer and blowing from the south at about 9 mph, toward the school."
+2026-11-12T10:30:00-08:00,2026-11-12T15:45:00-08:00,safe_window,yes,,"Inversion has burned off. Steady NW wind, small differences between heights."
+2026-11-12T13:20:00-08:00,2026-11-12T13:20:00-08:00,sensor_suspect,n/a,sensor_suspect,One impossible 5 ft temperature reading (139.8 F). Tests input validation.
+2026-11-12T15:00:00-08:00,2026-11-12T16:30:00-08:00,application_A2,yes,inversion;product_volatility,High-volatility product applied. Inversion starts near the end of the job.
+2026-11-12T16:10:00-08:00,2026-11-12T22:30:00-08:00,post_application_inversion,mixed,inversion;product_volatility,"Inversion persists for hours after application A2, with 5 ft wind under 3 mph for much of the evening. Vapor drift risk after spraying."
+2026-11-13T00:30:00-08:00,2026-11-13T09:45:00-08:00,overcast_night_no_inversion,yes,,"Cloudy, breezy night. No inversion forms, showing that night is not always unsafe."
+2026-11-13T09:00:00-08:00,2026-11-13T11:00:00-08:00,application_A3,yes,wind_above_10mph;wind_speed_shear,Conditions deteriorate during spraying. 30 ft wind passes 10 mph around 10:00.
+2026-11-13T10:15:00-08:00,2026-11-13T11:30:00-08:00,hidden_high_wind_aloft,yes,wind_above_10mph;wind_speed_shear,5 ft wind is 7-9 mph and looks fine. 30 ft wind is 11-15 mph.
+2026-11-13T12:15:00-08:00,2026-11-13T15:15:00-08:00,high_wind_all_heights,no,wind_above_10mph;wind_speed_shear,Pre-frontal wind above 10 mph at every height.
+2026-11-13T13:45:00-08:00,2026-11-13T16:15:00-08:00,rain_and_wind_shift,no,wind_above_10mph,Light rain. Wind swings from S to NW between about 14:00 and 14:45 as the front passes.
+2026-11-13T20:30:00-08:00,2026-11-13T23:55:00-08:00,evening_inversion,mixed,inversion,Skies clear behind the front and an inversion builds while the wind is still easing.
+2026-11-14T00:00:00-08:00,2026-11-14T09:00:00-08:00,calm_inversion,no,inversion;wind_below_3mph,"Cold, clear, nearly calm. Inversion until mid-morning."
+2026-11-14T03:10:00-08:00,2026-11-14T04:25:00-08:00,sensor_missing,n/a,sensor_missing,30 ft sensor stops reporting. The 5 and 15 ft sensors still show the inversion.
+2026-11-14T10:00:00-08:00,2026-11-14T11:30:00-08:00,low_wind_no_inversion,no,wind_below_3mph,"Inversion is gone but the air is light and variable, under 3 mph at 5 ft."
+2026-11-14T12:30:00-08:00,2026-11-14T15:30:00-08:00,safe_window,yes,,"Steady NW wind inside 3-10 mph, no inversion, little shear."
+2026-11-14T13:00:00-08:00,2026-11-14T13:40:00-08:00,sensor_stale,n/a,sensor_stale,15 ft sensor repeats its 12:55 reading. observed_at stops advancing.
+2026-11-14T16:15:00-08:00,2026-11-14T23:55:00-08:00,evening_inversion,no,inversion;wind_below_3mph,Inversion re-forms before sunset.

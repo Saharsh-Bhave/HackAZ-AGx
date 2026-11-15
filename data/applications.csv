@@ -1,0 +1,6 @@
+application_id,status,block_id,product_id,start_time,end_time,earliest_start,latest_end,duration_minutes,method,droplet_class,spray_volume_gpa,acres,applicator,pca,notes
+A1,completed,B1,P1,2026-11-11T10:00:00-08:00,2026-11-11T12:00:00-08:00,,,120,airblast,Medium,100,38,Mateo Fuentes,Priya Raman,"Conditions stay acceptable before, during and after."
+A2,completed,B2,P3,2026-11-12T15:00:00-08:00,2026-11-12T16:30:00-08:00,,,90,ground boom (orchard floor),Coarse,20,42,Mateo Fuentes,Priya Raman,High-volatility product. Evening inversion forms near the end of the job and lasts through the monitoring period.
+A3,completed,B3,P2,2026-11-13T09:00:00-08:00,2026-11-13T11:00:00-08:00,,,120,airblast,Medium,100,25,Mateo Fuentes,Priya Raman,Starts in acceptable conditions. Wind above the canopy climbs past 10 mph mid-job while the 5 ft wind still looks fine.
+A4,planned,B1,P4,,,2026-11-15T06:00:00-08:00,2026-11-15T18:00:00-08:00,120,airblast,Coarse,200,38,Mateo Fuentes,Priya Raman,Needs a spray window. Use the forecast and recent tower history.
+A5,planned,B2,P3,,,2026-11-16T06:00:00-08:00,2026-11-16T18:00:00-08:00,90,ground boom (orchard floor),Coarse,20,42,Mateo Fuentes,Priya Raman,High-volatility product with an 8 mph label limit; the afternoon is forecast to turn breezy.

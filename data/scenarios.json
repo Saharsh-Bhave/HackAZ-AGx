@@ -1,0 +1,695 @@
+{
+  "_note": "Single snapshots for demo buttons and unit tests. intended_hazards is what each scenario was designed to show. How large a difference counts as shear, and how hazards map to Go / Caution / Stop, is your tool's policy.",
+  "scenarios": [
+    {
+      "id": "safe_midday",
+      "name": "Safe midday",
+      "description": "Well-mixed afternoon. Cooler aloft, steady NW wind, little shear.",
+      "timestamp": "2026-11-11T13:00:00-08:00",
+      "matches_time_series": true,
+      "product_id": null,
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 64.2,
+          "relative_humidity_pct": 44,
+          "wind_speed_mph": 5.8,
+          "wind_gust_mph": 8.3,
+          "wind_direction_deg": 305,
+          "quality": "good",
+          "observed_at": "2026-11-11T13:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 63.7,
+          "relative_humidity_pct": 45,
+          "wind_speed_mph": 6.6,
+          "wind_gust_mph": 9.4,
+          "wind_direction_deg": 308,
+          "quality": "good",
+          "observed_at": "2026-11-11T13:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": 62.9,
+          "relative_humidity_pct": 46,
+          "wind_speed_mph": 7.9,
+          "wind_gust_mph": 11.3,
+          "wind_direction_deg": 312,
+          "quality": "good",
+          "observed_at": "2026-11-11T13:00:00-08:00"
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 64.6,
+        "wind_speed_mph": 6.1,
+        "wind_direction_deg": 310
+      },
+      "ground_station_looks_ok": true,
+      "intended_hazards": []
+    },
+    {
+      "id": "hidden_inversion",
+      "name": "Hidden inversion (primary demo)",
+      "description": "Ground wind is 4.7 mph and looks fine. Air at 30 ft is 4.9 F warmer, almost twice as fast, and blowing from the south instead of the east.",
+      "timestamp": "2026-11-12T07:00:00-08:00",
+      "matches_time_series": true,
+      "product_id": null,
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 45.6,
+          "relative_humidity_pct": 91,
+          "wind_speed_mph": 4.7,
+          "wind_gust_mph": 6.8,
+          "wind_direction_deg": 100,
+          "quality": "good",
+          "observed_at": "2026-11-12T07:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 47.8,
+          "relative_humidity_pct": 84,
+          "wind_speed_mph": 6.2,
+          "wind_gust_mph": 8.9,
+          "wind_direction_deg": 140,
+          "quality": "good",
+          "observed_at": "2026-11-12T07:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": 50.5,
+          "relative_humidity_pct": 76,
+          "wind_speed_mph": 9.0,
+          "wind_gust_mph": 12.8,
+          "wind_direction_deg": 185,
+          "quality": "good",
+          "observed_at": "2026-11-12T07:00:00-08:00"
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 46.9,
+        "wind_speed_mph": 5.0,
+        "wind_direction_deg": 105
+      },
+      "ground_station_looks_ok": true,
+      "intended_hazards": [
+        "inversion",
+        "wind_direction_shear",
+        "wind_speed_shear"
+      ]
+    },
+    {
+      "id": "calm_inversion",
+      "name": "Calm inversion",
+      "description": "Classic still, clear pre-dawn. Strong inversion and almost no wind.",
+      "timestamp": "2026-11-11T05:30:00-08:00",
+      "matches_time_series": true,
+      "product_id": null,
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 42.8,
+          "relative_humidity_pct": 94,
+          "wind_speed_mph": 0.9,
+          "wind_gust_mph": 1.5,
+          "wind_direction_deg": 95,
+          "quality": "good",
+          "observed_at": "2026-11-11T05:30:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 45.6,
+          "relative_humidity_pct": 84,
+          "wind_speed_mph": 1.6,
+          "wind_gust_mph": 2.4,
+          "wind_direction_deg": 110,
+          "quality": "good",
+          "observed_at": "2026-11-11T05:30:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": 49.1,
+          "relative_humidity_pct": 74,
+          "wind_speed_mph": 3.1,
+          "wind_gust_mph": 4.5,
+          "wind_direction_deg": 125,
+          "quality": "good",
+          "observed_at": "2026-11-11T05:30:00-08:00"
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 43.9,
+        "wind_speed_mph": 1.1,
+        "wind_direction_deg": 100
+      },
+      "ground_station_looks_ok": false,
+      "intended_hazards": [
+        "inversion",
+        "wind_below_3mph"
+      ]
+    },
+    {
+      "id": "low_wind_no_inversion",
+      "name": "Low wind, no inversion",
+      "description": "Inversion has lifted but the air is light and variable.",
+      "timestamp": "2026-11-14T10:45:00-08:00",
+      "matches_time_series": true,
+      "product_id": null,
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 52.0,
+          "relative_humidity_pct": 58,
+          "wind_speed_mph": 2.0,
+          "wind_gust_mph": 3.0,
+          "wind_direction_deg": 195,
+          "quality": "good",
+          "observed_at": "2026-11-14T10:45:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 51.6,
+          "relative_humidity_pct": 59,
+          "wind_speed_mph": 2.4,
+          "wind_gust_mph": 3.6,
+          "wind_direction_deg": 185,
+          "quality": "good",
+          "observed_at": "2026-11-14T10:45:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": 51.0,
+          "relative_humidity_pct": 60,
+          "wind_speed_mph": 3.4,
+          "wind_gust_mph": 5.0,
+          "wind_direction_deg": 180,
+          "quality": "good",
+          "observed_at": "2026-11-14T10:45:00-08:00"
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 52.4,
+        "wind_speed_mph": 2.2,
+        "wind_direction_deg": 200
+      },
+      "ground_station_looks_ok": false,
+      "intended_hazards": [
+        "wind_below_3mph"
+      ]
+    },
+    {
+      "id": "high_wind_aloft",
+      "name": "High wind above the canopy",
+      "description": "5 ft wind is 8 mph. Above the canopy it is over 13 mph.",
+      "timestamp": "2026-11-13T11:00:00-08:00",
+      "matches_time_series": true,
+      "product_id": null,
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 56.9,
+          "relative_humidity_pct": 77,
+          "wind_speed_mph": 8.0,
+          "wind_gust_mph": 11.4,
+          "wind_direction_deg": 160,
+          "quality": "good",
+          "observed_at": "2026-11-13T11:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 56.6,
+          "relative_humidity_pct": 78,
+          "wind_speed_mph": 10.1,
+          "wind_gust_mph": 14.3,
+          "wind_direction_deg": 164,
+          "quality": "good",
+          "observed_at": "2026-11-13T11:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": 56.1,
+          "relative_humidity_pct": 79,
+          "wind_speed_mph": 13.2,
+          "wind_gust_mph": 18.7,
+          "wind_direction_deg": 168,
+          "quality": "good",
+          "observed_at": "2026-11-13T11:00:00-08:00"
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 57.1,
+        "wind_speed_mph": 8.4,
+        "wind_direction_deg": 165
+      },
+      "ground_station_looks_ok": true,
+      "intended_hazards": [
+        "wind_above_10mph",
+        "wind_speed_shear"
+      ]
+    },
+    {
+      "id": "high_wind_all",
+      "name": "High wind at every height",
+      "description": "Pre-frontal wind. Too windy everywhere, and the ground station agrees.",
+      "timestamp": "2026-11-13T13:30:00-08:00",
+      "matches_time_series": true,
+      "product_id": null,
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 59.8,
+          "relative_humidity_pct": 70,
+          "wind_speed_mph": 12.6,
+          "wind_gust_mph": 17.8,
+          "wind_direction_deg": 172,
+          "quality": "good",
+          "observed_at": "2026-11-13T13:30:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 59.5,
+          "relative_humidity_pct": 71,
+          "wind_speed_mph": 15.2,
+          "wind_gust_mph": 21.5,
+          "wind_direction_deg": 175,
+          "quality": "good",
+          "observed_at": "2026-11-13T13:30:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": 59.0,
+          "relative_humidity_pct": 72,
+          "wind_speed_mph": 18.7,
+          "wind_gust_mph": 26.4,
+          "wind_direction_deg": 178,
+          "quality": "good",
+          "observed_at": "2026-11-13T13:30:00-08:00"
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 60.0,
+        "wind_speed_mph": 13.4,
+        "wind_direction_deg": 175
+      },
+      "ground_station_looks_ok": false,
+      "intended_hazards": [
+        "wind_above_10mph",
+        "wind_speed_shear"
+      ]
+    },
+    {
+      "id": "direction_shear_only",
+      "name": "Direction shear only",
+      "description": "No inversion and speeds are in range, but the wind turns 95 degrees between 5 ft and 30 ft.",
+      "timestamp": "2026-11-14T12:00:00-08:00",
+      "matches_time_series": false,
+      "product_id": null,
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 58.0,
+          "relative_humidity_pct": 50,
+          "wind_speed_mph": 4.6,
+          "wind_gust_mph": 6.6,
+          "wind_direction_deg": 130,
+          "quality": "good",
+          "observed_at": "2026-11-14T12:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 57.6,
+          "relative_humidity_pct": 51,
+          "wind_speed_mph": 5.2,
+          "wind_gust_mph": 7.5,
+          "wind_direction_deg": 175,
+          "quality": "good",
+          "observed_at": "2026-11-14T12:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": 57.1,
+          "relative_humidity_pct": 52,
+          "wind_speed_mph": 6.4,
+          "wind_gust_mph": 9.2,
+          "wind_direction_deg": 225,
+          "quality": "good",
+          "observed_at": "2026-11-14T12:00:00-08:00"
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 58.3,
+        "wind_speed_mph": 4.9,
+        "wind_direction_deg": 135
+      },
+      "ground_station_looks_ok": true,
+      "intended_hazards": [
+        "wind_direction_shear"
+      ]
+    },
+    {
+      "id": "speed_shear_only",
+      "name": "Speed shear only",
+      "description": "No inversion, same direction, every speed in range, but the 30 ft wind is 6 mph faster than the 5 ft wind.",
+      "timestamp": "2026-11-11T15:00:00-08:00",
+      "matches_time_series": false,
+      "product_id": null,
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 60.5,
+          "relative_humidity_pct": 48,
+          "wind_speed_mph": 3.4,
+          "wind_gust_mph": 5.0,
+          "wind_direction_deg": 300,
+          "quality": "good",
+          "observed_at": "2026-11-11T15:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 60.1,
+          "relative_humidity_pct": 49,
+          "wind_speed_mph": 5.9,
+          "wind_gust_mph": 8.5,
+          "wind_direction_deg": 305,
+          "quality": "good",
+          "observed_at": "2026-11-11T15:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": 59.5,
+          "relative_humidity_pct": 50,
+          "wind_speed_mph": 9.4,
+          "wind_gust_mph": 13.4,
+          "wind_direction_deg": 310,
+          "quality": "good",
+          "observed_at": "2026-11-11T15:00:00-08:00"
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 60.8,
+        "wind_speed_mph": 3.7,
+        "wind_direction_deg": 300
+      },
+      "ground_station_looks_ok": true,
+      "intended_hazards": [
+        "wind_speed_shear"
+      ]
+    },
+    {
+      "id": "sensor_missing_upper",
+      "name": "Top sensor offline",
+      "description": "30 ft sensor is not reporting. The lower two still show an inversion.",
+      "timestamp": "2026-11-14T03:30:00-08:00",
+      "matches_time_series": true,
+      "product_id": null,
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 40.6,
+          "relative_humidity_pct": 89,
+          "wind_speed_mph": 0.8,
+          "wind_gust_mph": 1.3,
+          "wind_direction_deg": 110,
+          "quality": "good",
+          "observed_at": "2026-11-14T03:30:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 42.1,
+          "relative_humidity_pct": 83,
+          "wind_speed_mph": 1.2,
+          "wind_gust_mph": 1.9,
+          "wind_direction_deg": 105,
+          "quality": "good",
+          "observed_at": "2026-11-14T03:30:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": null,
+          "relative_humidity_pct": null,
+          "wind_speed_mph": null,
+          "wind_gust_mph": null,
+          "wind_direction_deg": null,
+          "quality": "missing",
+          "observed_at": null
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 41.4,
+        "wind_speed_mph": 0.9,
+        "wind_direction_deg": 100
+      },
+      "ground_station_looks_ok": false,
+      "intended_hazards": [
+        "sensor_missing",
+        "inversion",
+        "wind_below_3mph"
+      ]
+    },
+    {
+      "id": "sensor_stale_mid",
+      "name": "Mid sensor stale",
+      "description": "15 ft sensor last updated 25 minutes ago. Other heights look acceptable.",
+      "timestamp": "2026-11-14T13:20:00-08:00",
+      "matches_time_series": true,
+      "product_id": null,
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 59.3,
+          "relative_humidity_pct": 45,
+          "wind_speed_mph": 4.7,
+          "wind_gust_mph": 6.8,
+          "wind_direction_deg": 312,
+          "quality": "good",
+          "observed_at": "2026-11-14T13:20:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 57.8,
+          "relative_humidity_pct": 47,
+          "wind_speed_mph": 5.0,
+          "wind_gust_mph": 7.2,
+          "wind_direction_deg": 314,
+          "quality": "stale",
+          "observed_at": "2026-11-14T12:55:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": 57.9,
+          "relative_humidity_pct": 47,
+          "wind_speed_mph": 6.5,
+          "wind_gust_mph": 9.3,
+          "wind_direction_deg": 318,
+          "quality": "good",
+          "observed_at": "2026-11-14T13:20:00-08:00"
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 59.6,
+        "wind_speed_mph": 5.0,
+        "wind_direction_deg": 315
+      },
+      "ground_station_looks_ok": true,
+      "intended_hazards": [
+        "sensor_stale"
+      ]
+    },
+    {
+      "id": "volatile_product_marginal",
+      "name": "Volatile product near its label limit",
+      "description": "Fine under the general 3-10 mph guidance. Product P3 has an 8 mph label limit, which the 30 ft wind exceeds. The same readings with P1 are acceptable.",
+      "timestamp": "2026-11-12T14:30:00-08:00",
+      "matches_time_series": false,
+      "product_id": "P3",
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 66.8,
+          "relative_humidity_pct": 42,
+          "wind_speed_mph": 6.9,
+          "wind_gust_mph": 9.9,
+          "wind_direction_deg": 310,
+          "quality": "good",
+          "observed_at": "2026-11-12T14:30:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 66.3,
+          "relative_humidity_pct": 43,
+          "wind_speed_mph": 7.8,
+          "wind_gust_mph": 11.1,
+          "wind_direction_deg": 312,
+          "quality": "good",
+          "observed_at": "2026-11-12T14:30:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": 65.9,
+          "relative_humidity_pct": 44,
+          "wind_speed_mph": 8.9,
+          "wind_gust_mph": 12.7,
+          "wind_direction_deg": 315,
+          "quality": "good",
+          "observed_at": "2026-11-12T14:30:00-08:00"
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 67.1,
+        "wind_speed_mph": 7.2,
+        "wind_direction_deg": 312
+      },
+      "ground_station_looks_ok": true,
+      "intended_hazards": [
+        "product_label_limit"
+      ]
+    },
+    {
+      "id": "boundary_wind_3mph",
+      "name": "Boundary: exactly 3 mph, equal temperatures",
+      "description": "Unit-test case. Wind is exactly 3.0 mph and all temperatures are equal, so neither 'below 3 mph' nor 'upper warmer than lower' is true.",
+      "timestamp": "2026-11-11T12:00:00-08:00",
+      "matches_time_series": false,
+      "product_id": null,
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 55.0,
+          "relative_humidity_pct": 60,
+          "wind_speed_mph": 3.0,
+          "wind_gust_mph": 4.4,
+          "wind_direction_deg": 300,
+          "quality": "good",
+          "observed_at": "2026-11-11T12:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 55.0,
+          "relative_humidity_pct": 60,
+          "wind_speed_mph": 3.0,
+          "wind_gust_mph": 4.4,
+          "wind_direction_deg": 300,
+          "quality": "good",
+          "observed_at": "2026-11-11T12:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": 55.0,
+          "relative_humidity_pct": 60,
+          "wind_speed_mph": 3.0,
+          "wind_gust_mph": 4.4,
+          "wind_direction_deg": 300,
+          "quality": "good",
+          "observed_at": "2026-11-11T12:00:00-08:00"
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 55.0,
+        "wind_speed_mph": 3.0,
+        "wind_direction_deg": 300
+      },
+      "ground_station_looks_ok": true,
+      "intended_hazards": []
+    },
+    {
+      "id": "boundary_wind_10mph",
+      "name": "Boundary: exactly 10 mph",
+      "description": "Unit-test case. Wind is exactly 10.0 mph, so 'above 10 mph' is not true.",
+      "timestamp": "2026-11-11T12:00:00-08:00",
+      "matches_time_series": false,
+      "product_id": null,
+      "readings": [
+        {
+          "sensor_id": "TWR1-05",
+          "height_ft": 5,
+          "temperature_f": 55.3,
+          "relative_humidity_pct": 60,
+          "wind_speed_mph": 10.0,
+          "wind_gust_mph": 14.2,
+          "wind_direction_deg": 300,
+          "quality": "good",
+          "observed_at": "2026-11-11T12:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-15",
+          "height_ft": 15,
+          "temperature_f": 55.1,
+          "relative_humidity_pct": 60,
+          "wind_speed_mph": 10.0,
+          "wind_gust_mph": 14.2,
+          "wind_direction_deg": 300,
+          "quality": "good",
+          "observed_at": "2026-11-11T12:00:00-08:00"
+        },
+        {
+          "sensor_id": "TWR1-30",
+          "height_ft": 30,
+          "temperature_f": 54.9,
+          "relative_humidity_pct": 61,
+          "wind_speed_mph": 10.0,
+          "wind_gust_mph": 14.2,
+          "wind_direction_deg": 300,
+          "quality": "good",
+          "observed_at": "2026-11-11T12:00:00-08:00"
+        }
+      ],
+      "ground_station": {
+        "height_ft": 6.5,
+        "temperature_f": 55.4,
+        "wind_speed_mph": 10.0,
+        "wind_direction_deg": 300
+      },
+      "ground_station_looks_ok": true,
+      "intended_hazards": []
+    }
+  ]
+}

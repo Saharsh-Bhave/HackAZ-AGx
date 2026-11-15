@@ -1,0 +1,161 @@
+{
+  "site_id": "KRO",
+  "name": "Kings River Orchards (fictional)",
+  "location": {
+    "nearest_town": "Parlier, CA",
+    "county": "Fresno",
+    "region": "San Joaquin Valley",
+    "latitude": 36.611,
+    "longitude": -119.527,
+    "elevation_ft": 345
+  },
+  "timezone": "America/Los_Angeles",
+  "utc_offset": "-08:00",
+  "data_period": {
+    "history_start": "2026-11-11T00:00:00-08:00",
+    "history_end": "2026-11-14T23:55:00-08:00",
+    "forecast_end": "2026-11-17T00:00:00-08:00"
+  },
+  "daylight": {
+    "sunrise_local": "06:35",
+    "sunset_local": "16:50",
+    "note": "Approximate for mid-November at this latitude."
+  },
+  "conventions": {
+    "wind_direction": "Degrees the wind blows FROM (0 = N, 90 = E).",
+    "drift_direction": "Spray moves toward (wind_direction + 180) % 360.",
+    "bearing_deg": "Compass bearing from the tower to the feature."
+  },
+  "tower": {
+    "tower_id": "TWR1",
+    "block_id": "B2",
+    "latitude": 36.6112,
+    "longitude": -119.5268,
+    "sampling_interval_minutes": 5,
+    "sensors": [
+      {
+        "sensor_id": "TWR1-05",
+        "height_ft": 5,
+        "position": "Below canopy, applicator height"
+      },
+      {
+        "sensor_id": "TWR1-15",
+        "height_ft": 15,
+        "position": "Upper canopy"
+      },
+      {
+        "sensor_id": "TWR1-30",
+        "height_ft": 30,
+        "position": "Above canopy"
+      }
+    ]
+  },
+  "ground_station": {
+    "station_id": "GS-PARLIER-SIM",
+    "description": "Single-height regional weather station in open ground.",
+    "height_ft": 6.5,
+    "distance_miles": 3.2,
+    "bearing_deg": 250,
+    "sampling_interval_minutes": 15
+  },
+  "blocks": [
+    {
+      "block_id": "B1",
+      "crop": "Almond",
+      "variety": "Nonpareil / Monterey",
+      "acres": 38,
+      "canopy_height_ft": 20,
+      "row_orientation": "N-S"
+    },
+    {
+      "block_id": "B2",
+      "crop": "Almond",
+      "variety": "Independence",
+      "acres": 42,
+      "canopy_height_ft": 22,
+      "row_orientation": "N-S"
+    },
+    {
+      "block_id": "B3",
+      "crop": "Peach",
+      "variety": "Late-season cling",
+      "acres": 25,
+      "canopy_height_ft": 12,
+      "row_orientation": "E-W"
+    }
+  ],
+  "sensitive_areas": [
+    {
+      "area_id": "S1",
+      "name": "Elementary school",
+      "type": "school",
+      "bearing_deg": 8,
+      "distance_ft": 1900
+    },
+    {
+      "area_id": "S2",
+      "name": "Organic vineyard (neighbor)",
+      "type": "sensitive_crop",
+      "bearing_deg": 90,
+      "distance_ft": 200
+    },
+    {
+      "area_id": "S3",
+      "name": "Irrigation canal",
+      "type": "waterway",
+      "bearing_deg": 180,
+      "distance_ft": 450
+    },
+    {
+      "area_id": "S4",
+      "name": "Farmworker housing",
+      "type": "residence",
+      "bearing_deg": 225,
+      "distance_ft": 1100
+    }
+  ],
+  "contacts": [
+    {
+      "contact_id": "C1",
+      "name": "Mateo Fuentes",
+      "role": "applicator",
+      "phone": "+1-559-555-0114",
+      "email": "mateo@example.com",
+      "channels": [
+        "sms",
+        "push"
+      ],
+      "notify_on": [
+        "CAUTION",
+        "STOP"
+      ]
+    },
+    {
+      "contact_id": "C2",
+      "name": "Priya Raman",
+      "role": "pca",
+      "phone": "+1-559-555-0127",
+      "email": "priya@example.com",
+      "channels": [
+        "sms",
+        "email"
+      ],
+      "notify_on": [
+        "STOP"
+      ]
+    },
+    {
+      "contact_id": "C3",
+      "name": "Walt Hendricks",
+      "role": "ranch_manager",
+      "phone": "+1-559-555-0139",
+      "email": "walt@example.com",
+      "channels": [
+        "email"
+      ],
+      "notify_on": [
+        "STOP"
+      ]
+    }
+  ]
+}
