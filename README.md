@@ -1,7 +1,7 @@
 # Orchard Drift Guard
 
 Orchard Drift Guard is a decision-support dashboard that compares temperature
-and wind at 5 ft and 30 ft before a pesticide application. It detects
+and wind at 5 ft, 15 ft and 30 ft before a pesticide application. It detects
 temperature inversions, unsafe wind speeds, and vertical wind shear, then gives
 an explainable **GO**, **CAUTION**, or **STOP** recommendation.
 
