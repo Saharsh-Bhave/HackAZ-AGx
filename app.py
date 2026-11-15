@@ -96,6 +96,7 @@ st.session_state.setdefault("spray_active", False)
 st.session_state.setdefault("spray_started_at", None)
 st.session_state.setdefault("last_spray_status", None)
 st.session_state.setdefault("auto_stop_notice", None)
+st.session_state.setdefault("last_assessment_status", None)
 for field, default in next(iter(PRESETS.values())).items():
     st.session_state.setdefault(field, default)
 
@@ -268,6 +269,22 @@ assessment = (
 
 current_status = assessment.status.name
 if (
+    not st.session_state.spray_active
+    and current_status == "GO"
+    and st.session_state.last_assessment_status != "GO"
+):
+    create_notification(
+        "GO conditions available",
+        (
+            "Current weather conditions pass the configured checks. Review the "
+            "product label and site, then use Start Spraying if appropriate."
+        ),
+        "success",
+        "go_available",
+    )
+    st.toast("GO conditions available", icon="✅")
+
+if (
     st.session_state.spray_active
     and st.session_state.last_spray_status
     and current_status != st.session_state.last_spray_status
@@ -311,6 +328,7 @@ if (
         st.session_state.auto_stop_notice = notification_message
     else:
         st.session_state.last_spray_status = current_status
+st.session_state.last_assessment_status = current_status
 
 with st.sidebar:
     if st.button("Save assessment", type="primary", width="stretch"):
@@ -397,7 +415,7 @@ with current_tab:
     else:
         start_disabled = current_status != "GO"
         if st.button(
-            "Start spraying & notify",
+            "Start Spraying",
             type="primary",
             disabled=start_disabled,
         ):
@@ -564,11 +582,12 @@ with method_tab:
         be replaced by product-label and local requirements for operational use.
 
         #### Notifications
-        GO means conditions passed the configured checks; it does not mean spraying
-        automatically began. The applicator must choose **Start spraying & notify**.
-        The app then records the event, shows an active-spray banner, and creates
-        another alert if conditions change to CAUTION. A STOP result automatically
-        ends the active software session and requires acknowledgement. Physical
-        equipment still needs a connected hardware interlock to shut off automatically.
+        When conditions enter GO, the app notifies the user that a spray window is
+        available. GO does not mean spraying automatically began: the applicator must
+        choose **Start Spraying**. The app then records the event, shows an
+        active-spray banner, and creates another alert if conditions change to CAUTION.
+        A STOP result automatically ends the active software session and requires
+        acknowledgement. Physical equipment still needs a connected hardware interlock
+        to shut off automatically.
         """
     )
