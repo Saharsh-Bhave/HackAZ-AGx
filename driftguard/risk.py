@@ -7,6 +7,7 @@ from .models import (
     ApplicationSettings,
     Assessment,
     DropletSize,
+    RiskFlags,
     RiskThresholds,
     Status,
     Volatility,
@@ -18,6 +19,33 @@ def circular_direction_difference(first_deg: float, second_deg: float) -> float:
     """Return the smallest angle between two headings (0 to 180 degrees)."""
     difference = abs((first_deg % 360) - (second_deg % 360))
     return min(difference, 360 - difference)
+
+
+def evaluate_weather_flags(
+    reading: WeatherReading, thresholds: RiskThresholds | None = None
+) -> RiskFlags:
+    """Evaluate the five core weather hazards without assigning a status."""
+    thresholds = thresholds or RiskThresholds()
+    speeds = (reading.lower_wind_mph, reading.upper_wind_mph)
+    return RiskFlags(
+        inversion=reading.upper_temp_f > reading.lower_temp_f,
+        wind_below_minimum=any(
+            speed < thresholds.minimum_wind_mph for speed in speeds
+        ),
+        wind_above_maximum=any(
+            speed > thresholds.maximum_wind_mph for speed in speeds
+        ),
+        wind_speed_shear=(
+            abs(reading.upper_wind_mph - reading.lower_wind_mph)
+            >= thresholds.speed_shear_mph
+        ),
+        wind_direction_shear=(
+            circular_direction_difference(
+                reading.lower_direction_deg, reading.upper_direction_deg
+            )
+            >= thresholds.direction_shear_deg
+        ),
+    )
 
 
 def _wind_band_alerts(
@@ -67,6 +95,7 @@ def assess_spray_risk(
     """Assess current conditions; this does not replace product-label requirements."""
     application = application or ApplicationSettings()
     thresholds = thresholds or RiskThresholds()
+    flags = evaluate_weather_flags(reading, thresholds)
     alerts = _wind_band_alerts(reading, thresholds)
 
     inversion_delta = reading.upper_temp_f - reading.lower_temp_f
@@ -75,7 +104,7 @@ def assess_spray_risk(
         reading.lower_direction_deg, reading.upper_direction_deg
     )
 
-    if inversion_delta > 0:
+    if flags.inversion:
         alerts.append(
             Alert(
                 code="temperature_inversion",
@@ -89,7 +118,7 @@ def assess_spray_risk(
             )
         )
 
-    if speed_delta >= thresholds.speed_shear_mph:
+    if flags.wind_speed_shear:
         alerts.append(
             Alert(
                 code="speed_shear",
@@ -103,7 +132,7 @@ def assess_spray_risk(
             )
         )
 
-    if direction_delta >= thresholds.direction_shear_deg:
+    if flags.wind_direction_shear:
         alerts.append(
             Alert(
                 code="direction_shear",
@@ -157,6 +186,7 @@ def assess_spray_risk(
     return Assessment(
         status=status,
         alerts=tuple(alerts),
+        flags=flags,
         inversion_delta_f=inversion_delta,
         wind_speed_delta_mph=speed_delta,
         wind_direction_delta_deg=direction_delta,

@@ -7,6 +7,7 @@ from datetime import datetime
 
 import streamlit as st
 
+from driftguard.data import load_scenarios
 from driftguard.models import (
     ApplicationSettings,
     DropletSize,
@@ -23,47 +24,20 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+SCENARIOS = load_scenarios()
+SCENARIO_BY_NAME = {scenario.name: scenario for scenario in SCENARIOS}
 PRESETS = {
-    "Safe conditions": {
-        "lower_temp": 68.0,
-        "upper_temp": 65.0,
-        "lower_wind": 5.0,
-        "upper_wind": 7.0,
-        "lower_direction": 315,
-        "upper_direction": 325,
-    },
-    "Temperature inversion": {
-        "lower_temp": 57.0,
-        "upper_temp": 62.0,
-        "lower_wind": 4.0,
-        "upper_wind": 6.0,
-        "lower_direction": 180,
-        "upper_direction": 190,
-    },
-    "Calm at ground level": {
-        "lower_temp": 63.0,
-        "upper_temp": 60.0,
-        "lower_wind": 1.0,
-        "upper_wind": 5.0,
-        "lower_direction": 90,
-        "upper_direction": 100,
-    },
-    "High wind": {
-        "lower_temp": 72.0,
-        "upper_temp": 68.0,
-        "lower_wind": 11.5,
-        "upper_wind": 14.0,
-        "lower_direction": 270,
-        "upper_direction": 275,
-    },
-    "Wind shear": {
-        "lower_temp": 70.0,
-        "upper_temp": 67.0,
-        "lower_wind": 4.0,
-        "upper_wind": 9.0,
-        "lower_direction": 20,
-        "upper_direction": 105,
-    },
+    scenario.name: {
+        "lower_temp": scenario.reading.lower_temp_f,
+        "upper_temp": scenario.reading.upper_temp_f,
+        "lower_wind": scenario.reading.lower_wind_mph,
+        "upper_wind": scenario.reading.upper_wind_mph,
+        "lower_direction": int(scenario.reading.lower_direction_deg),
+        "upper_direction": int(scenario.reading.upper_direction_deg),
+        "lower_height": scenario.reading.lower_height_ft,
+        "upper_height": scenario.reading.upper_height_ft,
+    }
+    for scenario in SCENARIOS
 }
 
 
@@ -72,7 +46,7 @@ def apply_preset() -> None:
         st.session_state[key] = value
 
 
-for field, default in PRESETS["Safe conditions"].items():
+for field, default in next(iter(PRESETS.values())).items():
     st.session_state.setdefault(field, default)
 
 st.markdown(
@@ -104,8 +78,13 @@ with st.sidebar:
         on_change=apply_preset,
         help="Choose a scenario, then adjust any reading manually.",
     )
+    selected_scenario = SCENARIO_BY_NAME[st.session_state.preset]
+    st.caption(
+        f"{selected_scenario.description}  \n"
+        f"Simulated at {selected_scenario.timestamp}"
+    )
 
-    st.markdown("### 5 ft sensor")
+    st.markdown(f"### {st.session_state.lower_height:g} ft sensor")
     lower_a, lower_b = st.columns(2)
     lower_a.number_input(
         "Temperature (°F)",
@@ -123,7 +102,7 @@ with st.sidebar:
     )
     st.slider("Wind direction (°)", 0, 359, key="lower_direction")
 
-    st.markdown("### 30 ft sensor")
+    st.markdown(f"### {st.session_state.upper_height:g} ft sensor")
     upper_a, upper_b = st.columns(2)
     upper_a.number_input(
         "Temperature (°F) ",
@@ -162,6 +141,8 @@ reading = WeatherReading(
     upper_wind_mph=st.session_state.upper_wind,
     lower_direction_deg=st.session_state.lower_direction,
     upper_direction_deg=st.session_state.upper_direction,
+    lower_height_ft=st.session_state.lower_height,
+    upper_height_ft=st.session_state.upper_height,
 )
 application = ApplicationSettings(
     product_name=product_name.strip() or "Unspecified product",
@@ -205,13 +186,13 @@ with current_tab:
     st.markdown("#### What the sensors see")
     height_1, height_2, inversion, shear = st.columns(4)
     height_1.metric(
-        "5 ft · temperature",
+        f"{reading.lower_height_ft:g} ft · temperature",
         f"{reading.lower_temp_f:.1f} °F",
         f"{reading.lower_wind_mph:.1f} mph · {reading.lower_direction_deg:.0f}°",
         delta_color="off",
     )
     height_2.metric(
-        "30 ft · temperature",
+        f"{reading.upper_height_ft:g} ft · temperature",
         f"{reading.upper_temp_f:.1f} °F",
         f"{reading.upper_wind_mph:.1f} mph · {reading.upper_direction_deg:.0f}°",
         delta_color="off",
@@ -287,7 +268,8 @@ with method_tab:
     st.markdown(
         """
         #### Decision rules
-        - **STOP — inversion:** temperature at 30 ft is warmer than at 5 ft.
+        - **STOP — inversion:** temperature at the upper sensor is warmer than
+          at the lower sensor.
         - **STOP — wind band:** wind at either height is below 3 mph or above 10 mph.
         - **CAUTION — speed shear:** wind speeds differ by 5 mph or more.
         - **CAUTION — direction shear:** wind directions differ by 45° or more.
