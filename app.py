@@ -16,7 +16,14 @@ from driftguard.models import (
     WeatherReading,
 )
 from driftguard.risk import assess_multi_height_risk, assess_spray_risk
-from driftguard.storage import assessments_to_csv, get_assessments, save_assessment
+from driftguard.storage import (
+    assessments_to_csv,
+    create_notification,
+    get_assessments,
+    get_notifications,
+    mark_all_notifications_read,
+    save_assessment,
+)
 
 st.set_page_config(
     page_title="Orchard Drift Guard",
@@ -85,6 +92,10 @@ def apply_sensor_mode() -> None:
 
 st.session_state.setdefault("sensor_mode", TWO_SENSOR_MODE)
 st.session_state.setdefault("preset", SCENARIOS[0].name)
+st.session_state.setdefault("spray_active", False)
+st.session_state.setdefault("spray_started_at", None)
+st.session_state.setdefault("last_spray_status", None)
+st.session_state.setdefault("auto_stop_notice", None)
 for field, default in next(iter(PRESETS.values())).items():
     st.session_state.setdefault(field, default)
 
@@ -255,6 +266,52 @@ assessment = (
     else assess_spray_risk(reading, application)
 )
 
+current_status = assessment.status.name
+if (
+    st.session_state.spray_active
+    and st.session_state.last_spray_status
+    and current_status != st.session_state.last_spray_status
+):
+    if current_status == "STOP":
+        notification_level = "error"
+        notification_title = "Spraying automatically stopped"
+        notification_message = (
+            f"The dashboard ended the active spray session for "
+            f"{application.product_name} because conditions changed to STOP. "
+            "Confirm that the physical sprayer has been shut off."
+        )
+        event_type = "spray_auto_stopped"
+    elif current_status == "GO":
+        notification_level = "success"
+        notification_title = "Conditions returned to GO"
+        notification_message = (
+            "Weather conditions are back within the configured limits. "
+            "Reconfirm the label and site before continuing."
+        )
+        event_type = "condition_changed"
+    else:
+        notification_level = "warning"
+        notification_title = f"Active spray changed to {current_status}"
+        notification_message = (
+            f"Conditions changed while spraying {application.product_name}. "
+            f"Current recommendation: {current_status}. {assessment.recommendation}"
+        )
+        event_type = "condition_changed"
+    create_notification(
+        notification_title,
+        notification_message,
+        notification_level,
+        event_type,
+    )
+    st.toast(notification_title, icon="🔔")
+    if current_status == "STOP":
+        st.session_state.spray_active = False
+        st.session_state.spray_started_at = None
+        st.session_state.last_spray_status = None
+        st.session_state.auto_stop_notice = notification_message
+    else:
+        st.session_state.last_spray_status = current_status
+
 with st.sidebar:
     if st.button("Save assessment", type="primary", width="stretch"):
         st.session_state.last_saved = save_assessment(
@@ -273,8 +330,15 @@ st.caption(
     f"{st.session_state.sensor_mode} · vertical weather checks for clearer spray decisions."
 )
 
-current_tab, history_tab, method_tab = st.tabs(
-    ["Live decision", "Assessment log", "How it works"]
+notifications = get_notifications()
+unread_count = sum(not item["is_read"] for item in notifications)
+current_tab, notification_tab, history_tab, method_tab = st.tabs(
+    [
+        "Live decision",
+        f"Notifications ({unread_count})",
+        "Assessment log",
+        "How it works",
+    ]
 )
 
 with current_tab:
@@ -294,6 +358,74 @@ with current_tab:
         """,
         unsafe_allow_html=True,
     )
+
+    st.markdown("#### Spray activity")
+    if st.session_state.auto_stop_notice:
+        st.error(
+            f"**Automatic software stop:** {st.session_state.auto_stop_notice}"
+        )
+        if st.button("Acknowledge automatic stop"):
+            st.session_state.auto_stop_notice = None
+            st.rerun()
+
+    if st.session_state.spray_active:
+        activity_message = (
+            f"**Spraying in progress:** {application.product_name}  \n"
+            f"Started {st.session_state.spray_started_at}"
+        )
+        if current_status == "GO":
+            st.success(activity_message)
+        else:
+            st.error(
+                f"{activity_message}  \n"
+                f"Current recommendation is **{current_status}**. Follow the label "
+                "and stop the application when required."
+            )
+        if st.button("Stop spraying", type="primary"):
+            stopped_at = create_notification(
+                "Spraying stopped",
+                f"The applicator stopped spraying {application.product_name}.",
+                "info",
+                "spray_stopped",
+            )
+            st.session_state.spray_active = False
+            st.session_state.spray_started_at = None
+            st.session_state.last_spray_status = None
+            st.toast("Spraying stopped", icon="⏹️")
+            st.session_state.last_notification_at = stopped_at
+            st.rerun()
+    else:
+        start_disabled = current_status != "GO"
+        if st.button(
+            "Start spraying & notify",
+            type="primary",
+            disabled=start_disabled,
+        ):
+            started_at = create_notification(
+                "Pesticide spraying started",
+                (
+                    f"{application.product_name} is being sprayed under a GO "
+                    f"assessment using {st.session_state.sensor_mode}."
+                ),
+                "success",
+                "spray_started",
+            )
+            st.session_state.last_saved = save_assessment(
+                reading,
+                application,
+                assessment,
+                sensor_readings=display_readings,
+            )
+            st.session_state.spray_active = True
+            st.session_state.spray_started_at = started_at
+            st.session_state.last_spray_status = current_status
+            st.session_state.auto_stop_notice = None
+            st.toast("Pesticide spraying started", icon="📣")
+            st.rerun()
+        if start_disabled:
+            st.caption(
+                "Starting is disabled because the current recommendation is not GO."
+            )
 
     st.markdown("#### What the sensors see")
     sensor_columns = st.columns(len(display_readings))
@@ -338,6 +470,29 @@ with current_tab:
         "No tool can guarantee zero drift.</p>",
         unsafe_allow_html=True,
     )
+
+with notification_tab:
+    notification_header, notification_action = st.columns([3, 1])
+    notification_header.markdown("#### In-app notification history")
+    if unread_count and notification_action.button(
+        "Mark all as read", width="stretch"
+    ):
+        mark_all_notifications_read()
+        st.rerun()
+
+    if notifications:
+        for notification in notifications:
+            unread_label = " · NEW" if not notification["is_read"] else ""
+            message = (
+                f'**{notification["title"]}{unread_label}**  \n'
+                f'{notification["message"]}  \n'
+                f'`{notification["created_at"]}`'
+            )
+            getattr(st, notification["level"])(message)
+    else:
+        st.info(
+            "No notifications yet. A GO assessment enables the Start spraying action."
+        )
 
 with history_tab:
     history_header, history_filter = st.columns([3, 1])
@@ -407,5 +562,13 @@ with method_tab:
         Direction shear uses the shortest circular difference, so 350° and 10° are
         correctly treated as 20° apart. Thresholds are demonstration defaults and must
         be replaced by product-label and local requirements for operational use.
+
+        #### Notifications
+        GO means conditions passed the configured checks; it does not mean spraying
+        automatically began. The applicator must choose **Start spraying & notify**.
+        The app then records the event, shows an active-spray banner, and creates
+        another alert if conditions change to CAUTION. A STOP result automatically
+        ends the active software session and requires acknowledgement. Physical
+        equipment still needs a connected hardware interlock to shut off automatically.
         """
     )
