@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from driftguard.data import load_scenarios
+from driftguard.data import load_scenarios, load_tower_timeline
 from driftguard.risk import evaluate_weather_flags
 
 
@@ -64,3 +64,23 @@ def test_exact_wind_boundaries_are_not_flagged() -> None:
 
     assert not at_three.wind_below_minimum
     assert not at_ten.wind_above_maximum
+
+
+def test_tower_timeline_is_chronological_and_multi_height() -> None:
+    timeline = load_tower_timeline()
+
+    assert len(timeline) > 1_000
+    assert timeline[0].timestamp < timeline[-1].timestamp
+    assert {sensor.height_ft for sensor in timeline[0].sensor_readings} == {
+        5,
+        15,
+        30,
+    }
+
+
+def test_tower_timeline_excludes_non_good_sensor_rows() -> None:
+    timeline = load_tower_timeline()
+    snapshots = {snapshot.timestamp: snapshot for snapshot in timeline}
+    missing_period = snapshots["2026-11-14T03:30:00-08:00"]
+
+    assert {sensor.height_ft for sensor in missing_period.sensor_readings} == {5, 15}

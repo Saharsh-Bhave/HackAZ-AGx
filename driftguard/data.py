@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import csv
 import json
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -10,6 +12,7 @@ from typing import Any
 from .models import SensorReading, WeatherReading
 
 DEFAULT_SCENARIOS_PATH = Path(__file__).resolve().parents[1] / "data" / "scenarios.json"
+DEFAULT_TOWER_PATH = Path(__file__).resolve().parents[1] / "data" / "tower_readings.csv"
 
 
 @dataclass(frozen=True)
@@ -21,6 +24,12 @@ class Scenario:
     reading: WeatherReading
     sensor_readings: tuple[SensorReading, ...]
     intended_hazards: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class TowerSnapshot:
+    timestamp: str
+    sensor_readings: tuple[SensorReading, ...]
 
 
 def _has_weather_values(sensor: dict[str, Any]) -> bool:
@@ -80,3 +89,37 @@ def load_scenarios(path: Path = DEFAULT_SCENARIOS_PATH) -> list[Scenario]:
     with path.open(encoding="utf-8") as source:
         payload = json.load(source)
     return [scenario_from_dict(raw) for raw in payload["scenarios"]]
+
+
+def load_tower_timeline(path: Path = DEFAULT_TOWER_PATH) -> list[TowerSnapshot]:
+    """Load valid tower readings grouped into chronological sensor snapshots."""
+    grouped: dict[str, list[SensorReading]] = defaultdict(list)
+    with path.open(encoding="utf-8", newline="") as source:
+        for row in csv.DictReader(source):
+            required = (
+                row.get("height_ft"),
+                row.get("temperature_f"),
+                row.get("wind_speed_mph"),
+                row.get("wind_direction_deg"),
+            )
+            if row.get("quality") != "good" or not all(required):
+                continue
+            grouped[str(row["timestamp"])].append(
+                SensorReading(
+                    height_ft=float(row["height_ft"]),
+                    temperature_f=float(row["temperature_f"]),
+                    wind_speed_mph=float(row["wind_speed_mph"]),
+                    wind_direction_deg=float(row["wind_direction_deg"]),
+                )
+            )
+
+    return [
+        TowerSnapshot(
+            timestamp=timestamp,
+            sensor_readings=tuple(
+                sorted(readings, key=lambda reading: reading.height_ft)
+            ),
+        )
+        for timestamp, readings in sorted(grouped.items())
+        if len(readings) >= 2
+    ]
