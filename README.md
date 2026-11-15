@@ -5,8 +5,10 @@ and wind at 5 ft and 30 ft before a pesticide application. It detects
 temperature inversions, unsafe wind speeds, and vertical wind shear, then gives
 an explainable **GO**, **CAUTION**, or **STOP** recommendation.
 
-The MVP runs entirely from simulated or manually entered readings. Every saved
-assessment is time-stamped in a local SQLite log and can be exported as CSV.
+The MVP loads the multi-height snapshots in `data/scenarios.json` and also
+accepts manually adjusted readings. It uses the lowest and highest valid sensor
+heights in each scenario. Every saved assessment is time-stamped in a local
+SQLite log and can be exported as CSV.
 
 ## Run locally
 

@@ -60,9 +60,19 @@ class Alert:
 
 
 @dataclass(frozen=True)
+class RiskFlags:
+    inversion: bool = False
+    wind_below_minimum: bool = False
+    wind_above_maximum: bool = False
+    wind_speed_shear: bool = False
+    wind_direction_shear: bool = False
+
+
+@dataclass(frozen=True)
 class Assessment:
     status: Status
     alerts: tuple[Alert, ...] = field(default_factory=tuple)
+    flags: RiskFlags = field(default_factory=RiskFlags)
     inversion_delta_f: float = 0.0
     wind_speed_delta_mph: float = 0.0
     wind_direction_delta_deg: float = 0.0
