@@ -12,11 +12,31 @@ from driftguard.models import (
     ApplicationSettings,
     DropletSize,
     SensorReading,
+    Status,
     Volatility,
     WeatherReading,
 )
 from driftguard.risk import assess_multi_height_risk, assess_spray_risk
 from driftguard.storage import assessments_to_csv, get_assessments, save_assessment
+from driftguard.windows import (
+    alert_for_go,
+    confidence_marker,
+    first_fitting_window,
+    format_clock,
+    format_window_span,
+    latest_start,
+    limits_for_product,
+    planned_why,
+    load_products,
+    load_site,
+    load_spray_jobs,
+    predict_spray_windows,
+    push_text,
+    window_why,
+)
+
+STATUS_LABEL = {Status.GO: "Go", Status.CAUTION: "Caution", Status.STOP: "Stop"}
+STATUS_FILTER = {"All": None, "Go": "GO", "Caution": "CAUTION", "Stop": "STOP"}
 
 st.set_page_config(
     page_title="Orchard Drift Guard",
@@ -71,6 +91,25 @@ def apply_preset() -> None:
         st.session_state[key] = value
 
 
+PRODUCTS = load_products()
+PRODUCT_BY_NAME = {product["name"]: product for product in PRODUCTS}
+PRODUCT_BY_ID = {product["product_id"]: product for product in PRODUCTS}
+SITE = load_site()
+_VOLATILITY_BY_LABEL = {
+    "low": Volatility.LOW.value,
+    "medium": Volatility.MODERATE.value,
+    "high": Volatility.HIGH.value,
+}
+
+
+def apply_catalog_product() -> None:
+    product = PRODUCT_BY_NAME[st.session_state.product_name]
+    st.session_state.volatility = _VOLATILITY_BY_LABEL[product["volatility"]]
+    droplet = product["required_droplet_class"]
+    if droplet in {item.value for item in DropletSize}:
+        st.session_state.droplet = droplet
+
+
 def apply_sensor_mode() -> None:
     allowed = (
         THREE_SENSOR_SCENARIOS
@@ -85,6 +124,9 @@ def apply_sensor_mode() -> None:
 
 st.session_state.setdefault("sensor_mode", TWO_SENSOR_MODE)
 st.session_state.setdefault("preset", SCENARIOS[0].name)
+if "product_name" not in st.session_state:
+    st.session_state.product_name = PRODUCTS[0]["name"]
+    apply_catalog_product()
 for field, default in next(iter(PRESETS.values())).items():
     st.session_state.setdefault(field, default)
 
@@ -100,6 +142,8 @@ st.markdown(
         .status-go {background: linear-gradient(120deg, #177245, #2f9665);}
         .status-caution {background: linear-gradient(120deg, #a05a00, #cf8620);}
         .status-stop {background: linear-gradient(120deg, #9f2d2d, #d04747);}
+        .status-window {background: linear-gradient(120deg, #0e4d6c, #1d7a92);}
+        .status-window .status-label {font-size: 1.45rem;}
         .status-label {font-size: 2.1rem; font-weight: 800; line-height: 1.1;}
         .status-note {font-size: .95rem; margin-top: .45rem; opacity: .95;}
         .disclaimer {font-size: .82rem; opacity: .7;}
@@ -196,16 +240,23 @@ with st.sidebar:
     st.slider("Wind direction (°) ", 0, 359, key="upper_direction")
 
     st.markdown("### Application")
-    product_name = st.text_input("Product", "Unspecified product")
+    st.selectbox(
+        "Product",
+        list(PRODUCT_BY_NAME),
+        key="product_name",
+        on_change=apply_catalog_product,
+        help="Label wind and temperature limits come from the selected product.",
+    )
     volatility_value = st.selectbox(
         "Volatility",
         [item.value for item in Volatility],
-        index=1,
+        key="volatility",
         help="Use the product label and SDS to select the closest category.",
     )
     droplet_value = st.selectbox(
         "Droplet size",
         [item.value for item in DropletSize],
+        key="droplet",
         help="Fine droplets are more prone to physical drift.",
     )
 
@@ -220,10 +271,15 @@ reading = WeatherReading(
     upper_height_ft=st.session_state.upper_height,
 )
 application = ApplicationSettings(
-    product_name=product_name.strip() or "Unspecified product",
+    product_name=st.session_state.product_name,
     volatility=Volatility(volatility_value),
     droplet_size=DropletSize(droplet_value),
 )
+selected_product = PRODUCT_BY_NAME[st.session_state.product_name]
+spray_limits = limits_for_product(selected_product, SITE)
+spray_windows = predict_spray_windows(spray_limits)
+go_moment = datetime.fromisoformat(selected_scenario.timestamp)
+next_window_alert = alert_for_go(spray_windows, go_moment)
 display_readings = [
     SensorReading(
         height_ft=reading.lower_height_ft,
@@ -273,8 +329,8 @@ st.caption(
     f"{st.session_state.sensor_mode} · vertical weather checks for clearer spray decisions."
 )
 
-current_tab, history_tab, method_tab = st.tabs(
-    ["Live decision", "Assessment log", "How it works"]
+current_tab, windows_tab, history_tab, method_tab = st.tabs(
+    ["Live decision", "Spray windows", "Assessment log", "How it works"]
 )
 
 with current_tab:
@@ -288,12 +344,31 @@ with current_tab:
         f"""
         <div class="status-card status-{status_class}">
             <div class="eyebrow">Current recommendation</div>
-            <div class="status-label">{assessment.status.name}</div>
+            <div class="status-label">{STATUS_LABEL[assessment.status]}</div>
             <div class="status-note">{assessment.recommendation}</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
+    if assessment.status == Status.GO:
+        upcoming = next_window_alert.next_window
+        start_by = (
+            latest_start(upcoming, spray_limits.minimum_window) if upcoming else None
+        )
+        headline = (
+            f"{format_clock(start_by)} {start_by:%a}" if start_by else "No later window"
+        )
+        st.markdown(
+            f"""
+            <div class="status-card status-window">
+                <div class="eyebrow">Next window · start by</div>
+                <div class="status-label">{headline}</div>
+                <div class="status-note">{next_window_alert.message}</div>
+                <div class="status-note">Push · {next_window_alert.push or "No later window."}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown("#### What the sensors see")
     sensor_columns = st.columns(len(display_readings))
@@ -339,13 +414,105 @@ with current_tab:
         unsafe_allow_html=True,
     )
 
+with windows_tab:
+    minimum_hours = spray_limits.minimum_window.total_seconds() / 3600
+    st.caption(
+        f"Label · {selected_product['name']}: wind "
+        f"{spray_limits.min_wind_mph:g}–{spray_limits.max_wind_mph:g} mph, "
+        f"temperature at or below {spray_limits.max_temp_f:g}°F, "
+        f"rain under {spray_limits.max_precip_probability:g}%."
+    )
+    st.caption(
+        "Settings · spray hours "
+        f"{format_clock(spray_limits.spray_start)}–{format_clock(spray_limits.spray_end)}, "
+        f"minimum window {minimum_hours:g} hours. "
+        "Monday–Friday is common, Saturday is possible, and Sunday is less common. "
+        "A tower hour has to be Go. A forecast hour leaves inversion unseen."
+    )
+    if selected_product["volatility"] == "high":
+        st.caption(
+            "This product is high volatility, so a clear weather window still "
+            "reads Caution on the live decision."
+        )
+
+    st.markdown("#### Planned sprays")
+    planned = [job for job in load_spray_jobs() if job.status == "planned"]
+    if planned:
+        for job in planned:
+            if job.earliest_start is None or job.latest_end is None:
+                continue
+            product = PRODUCT_BY_ID[job.product_id]
+            job_limits = limits_for_product(product, SITE)
+            fit = first_fitting_window(
+                predict_spray_windows(job_limits),
+                job.earliest_start,
+                job.latest_end,
+                job.duration,
+            )
+            title = (
+                f"**{job.application_id} · {job.block_id} · {product['name']}**"
+            )
+            if fit is None:
+                st.warning(
+                    f"{title}  \nNo window inside "
+                    f"{job.earliest_start:%a} {format_clock(job.earliest_start)}–"
+                    f"{format_clock(job.latest_end)}."
+                )
+                continue
+            start_by = latest_start(
+                fit, job.duration, job.earliest_start, job.latest_end
+            )
+            usable_start = max(fit.start, job.earliest_start)
+            usable_end = min(fit.end, job.latest_end)
+            why = planned_why(fit, job.earliest_start, job.latest_end)
+            push = push_text(
+                fit,
+                job.duration,
+                f"{job.application_id} {job.block_id}",
+                job.earliest_start,
+                job.latest_end,
+            )
+            start_by_text = (
+                f"{format_clock(start_by)} {start_by:%A}" if start_by else "No start"
+            )
+            usable = (
+                f"{usable_start:%a} {format_clock(usable_start)}–"
+                f"{format_clock(usable_end)}"
+            )
+            st.markdown(f"{title}  \nStart by {start_by_text}")
+            detail = (
+                f"{usable} · {fit.likelihood} · {confidence_marker(fit)}"
+            )
+            if why:
+                detail = f"{detail}. {why}."
+            st.caption(detail)
+            st.caption(f"Push · {push}")
+    else:
+        st.info("No planned sprays are on the schedule.")
+
+    st.markdown("#### All windows")
+    st.caption("Start by here is for the 2-hour setting.")
+    if spray_windows:
+        for window in spray_windows:
+            start_by = latest_start(window, spray_limits.minimum_window)
+            start_by_text = format_clock(start_by) if start_by else "No start"
+            why = window_why(window)
+            reason = f" {why}." if why else ""
+            st.markdown(
+                f"**{format_window_span(window)}** · {window.likelihood} · "
+                f"{confidence_marker(window)}  \n"
+                f"Start by {start_by_text}.{reason}"
+            )
+    else:
+        st.info("No spray window in this forecast for the selected product.")
+
 with history_tab:
     history_header, history_filter = st.columns([3, 1])
     history_header.markdown("#### Time-stamped assessment log")
     selected_status = history_filter.selectbox(
-        "Filter status", ["All", "GO", "CAUTION", "STOP"]
+        "Filter status", list(STATUS_FILTER)
     )
-    records = get_assessments(selected_status)
+    records = get_assessments(STATUS_FILTER[selected_status])
 
     if records:
         display_records = []
@@ -359,7 +526,7 @@ with history_tab:
             display_records.append(
                 {
                     "UTC time": record["recorded_at"].replace("T", " "),
-                    "Status": record["status"],
+                    "Status": STATUS_LABEL.get(Status[record["status"]], record["status"]),
                     "5 ft temp": f'{record["lower_temp_f"]:.1f} °F',
                     "30 ft temp": f'{record["upper_temp_f"]:.1f} °F',
                     "5 ft wind": f'{record["lower_wind_mph"]:.1f} mph',
@@ -389,16 +556,22 @@ with method_tab:
     st.markdown(
         """
         #### Decision rules
-        - **STOP — inversion:** an upper sensor is warmer than the sensor immediately
+        - **Stop — inversion:** an upper sensor is warmer than the sensor immediately
           below it.
-        - **STOP — wind band:** wind at any measured height is below 3 mph or above
+        - **Stop — wind band:** wind at any measured height is below 3 mph or above
           10 mph.
-        - **CAUTION — speed shear:** any two sensor wind speeds differ by 5 mph
+        - **Caution — speed shear:** any two sensor wind speeds differ by 5 mph
           or more.
-        - **CAUTION — direction shear:** any two wind directions differ by 45°
+        - **Caution — direction shear:** any two wind directions differ by 45°
           or more.
-        - **Application modifier:** high volatility or fine droplets raise a GO or
-          CAUTION result by one level.
+        - **Application modifier:** high volatility or fine droplets raise a Go or
+          Caution result by one level.
+        - **Next spray window:** a Go names the next window and the latest start
+          for a 2-hour job. Label limits are wind, temperature, and rain. Settings
+          are spray hours 4 AM–10 PM and a 2-hour minimum. Monday–Friday is common,
+          Saturday is possible, and Sunday is less common. Tower hours have to be
+          Go. Forecast hours leave inversion unseen. The push line is the short
+          ntfy text.
 
         The two-sensor view evaluates one 5–30 ft layer. The three-sensor view
         evaluates 5–15 ft and 15–30 ft independently, so it can locate a shallow

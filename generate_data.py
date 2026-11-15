@@ -498,11 +498,11 @@ SITE = {
         "sampling_interval_minutes": 15,
     },
     "blocks": [
-        {"block_id": "B1", "crop": "Almond", "variety": "Nonpareil / Monterey", "acres": 38,
+        {"block_id": "B1", "crop": "Orchard", "acres": 38,
          "canopy_height_ft": 20, "row_orientation": "N-S"},
-        {"block_id": "B2", "crop": "Almond", "variety": "Independence", "acres": 42,
+        {"block_id": "B2", "crop": "Orchard", "acres": 42,
          "canopy_height_ft": 22, "row_orientation": "N-S"},
-        {"block_id": "B3", "crop": "Peach", "variety": "Late-season cling", "acres": 25,
+        {"block_id": "B3", "crop": "Orchard", "acres": 25,
          "canopy_height_ft": 12, "row_orientation": "E-W"},
     ],
     "sensitive_areas": [
