@@ -1,4 +1,4 @@
-"""Typed data models shared by the risk engine, UI, and audit log."""
+"""Typed data models shared by the risk engine, UI, and spray log."""
 
 from __future__ import annotations
 
