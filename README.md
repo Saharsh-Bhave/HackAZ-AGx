@@ -25,6 +25,11 @@ Open the local URL printed by Streamlit. Select a demonstration scenario or
 adjust either sensor manually. The decision updates live; choose **Save
 assessment** to add it to the audit log.
 
+Use **Sensor configuration** to compare the original 5/30 ft view with the
+5/15/30 ft view. The three-sensor engine checks each adjacent temperature layer
+for an inversion, checks wind limits at every height, and finds the largest
+speed or direction difference among all sensor pairs.
+
 ## Decision rules
 
 | Condition | Default result |

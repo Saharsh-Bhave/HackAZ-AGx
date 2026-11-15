@@ -6,11 +6,12 @@ import csv
 import io
 import json
 import sqlite3
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .models import ApplicationSettings, Assessment, WeatherReading
+from .models import ApplicationSettings, Assessment, SensorReading, WeatherReading
 
 DEFAULT_DB_PATH = Path("data/driftguard.db")
 
@@ -41,6 +42,13 @@ def initialize_database(db_path: Path = DEFAULT_DB_PATH) -> None:
             )
             """
         )
+        columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(assessments)")
+        }
+        if "sensor_profile" not in columns:
+            connection.execute(
+                "ALTER TABLE assessments ADD COLUMN sensor_profile TEXT"
+            )
 
 
 def save_assessment(
@@ -48,6 +56,7 @@ def save_assessment(
     application: ApplicationSettings,
     assessment: Assessment,
     db_path: Path = DEFAULT_DB_PATH,
+    sensor_readings: Sequence[SensorReading] | None = None,
 ) -> str:
     initialize_database(db_path)
     recorded_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -59,8 +68,8 @@ def save_assessment(
                 upper_wind_mph, lower_direction_deg, upper_direction_deg,
                 product_name, volatility, droplet_size, status,
                 inversion_delta_f, wind_speed_delta_mph,
-                wind_direction_delta_deg, alert_codes, reasons
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                wind_direction_delta_deg, alert_codes, reasons, sensor_profile
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 recorded_at,
@@ -79,6 +88,17 @@ def save_assessment(
                 assessment.wind_direction_delta_deg,
                 json.dumps([alert.code for alert in assessment.alerts]),
                 json.dumps([alert.explanation for alert in assessment.alerts]),
+                json.dumps(
+                    [
+                        {
+                            "height_ft": sensor.height_ft,
+                            "temperature_f": sensor.temperature_f,
+                            "wind_speed_mph": sensor.wind_speed_mph,
+                            "wind_direction_deg": sensor.wind_direction_deg,
+                        }
+                        for sensor in (sensor_readings or ())
+                    ]
+                ),
             ),
         )
     return recorded_at
