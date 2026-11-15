@@ -9,6 +9,11 @@ from datetime import datetime
 import streamlit as st
 
 from driftguard.data import load_scenarios, load_tower_timeline
+from driftguard.forecast import (
+    find_candidate_windows,
+    format_window,
+    load_hourly_forecast,
+)
 from driftguard.models import (
     ApplicationSettings,
     DropletSize,
@@ -35,6 +40,7 @@ st.set_page_config(
 
 SCENARIOS = load_scenarios()
 TOWER_TIMELINE = load_tower_timeline()
+FORECAST_HOURS = load_hourly_forecast()
 SCENARIO_BY_NAME = {scenario.name: scenario for scenario in SCENARIOS}
 TWO_SENSOR_MODE = "2 sensors · 5 + 30 ft"
 THREE_SENSOR_MODE = "3 sensors · 5 + 15 + 30 ft"
@@ -341,6 +347,13 @@ with st.sidebar:
         [item.value for item in DropletSize],
         help="Fine droplets are more prone to physical drift.",
     )
+    application_duration = st.number_input(
+        "Required spray window (hours)",
+        min_value=1.0,
+        max_value=8.0,
+        value=2.0,
+        step=0.5,
+    )
 
 reading = WeatherReading(
     lower_temp_f=st.session_state.lower_temp,
@@ -356,6 +369,21 @@ application = ApplicationSettings(
     product_name=product_name.strip() or "Unspecified product",
     volatility=Volatility(volatility_value),
     droplet_size=DropletSize(droplet_value),
+)
+forecast_limits = {
+    Volatility.LOW: (10.0, 90.0),
+    Volatility.MODERATE: (10.0, 85.0),
+    Volatility.HIGH: (8.0, 80.0),
+}
+forecast_max_wind, forecast_max_temperature = forecast_limits[
+    application.volatility
+]
+candidate_windows = find_candidate_windows(
+    FORECAST_HOURS,
+    as_of=datetime.fromisoformat(selected_observed_at),
+    duration_hours=application_duration,
+    maximum_wind_mph=forecast_max_wind,
+    maximum_temperature_f=forecast_max_temperature,
 )
 display_readings = [
     SensorReading(
@@ -389,6 +417,11 @@ assessment = (
 )
 
 current_status = assessment.status.name
+entered_stop = (
+    current_status == "STOP"
+    and st.session_state.last_assessment_status != "STOP"
+)
+spray_was_active = st.session_state.spray_active
 if (
     not st.session_state.spray_active
     and current_status == "GO"
@@ -449,6 +482,37 @@ if (
         st.session_state.auto_stop_notice = notification_message
     else:
         st.session_state.last_spray_status = current_status
+
+if entered_stop:
+    if not spray_was_active:
+        create_notification(
+            "STOP conditions detected",
+            (
+                f"Current conditions are unsafe for spraying "
+                f"{application.product_name}. {assessment.recommendation}"
+            ),
+            "error",
+            "stop_detected",
+        )
+    if candidate_windows:
+        window_message = (
+            f"Next candidate: {format_window(candidate_windows[0])}. "
+            "Moderate confidence only: the regional forecast cannot confirm a "
+            "future orchard temperature inversion. Recheck tower sensors first."
+        )
+    else:
+        window_message = (
+            "No candidate window long enough for this application appears in the "
+            "remaining forecast. Recheck when the forecast updates."
+        )
+    create_notification(
+        "Next potential spray window",
+        window_message,
+        "info",
+        "next_spray_window",
+    )
+    st.toast("Next potential spray window added", icon="🕒")
+
 st.session_state.last_assessment_status = current_status
 
 reading_signature = (
@@ -497,9 +561,10 @@ st.caption(
 
 notifications = get_notifications()
 unread_count = sum(not item["is_read"] for item in notifications)
-current_tab, notification_tab, history_tab, method_tab = st.tabs(
+current_tab, forecast_tab, notification_tab, history_tab, method_tab = st.tabs(
     [
         "Live decision",
+        "Spray windows",
         f"Notifications ({unread_count})",
         "Assessment log",
         "How it works",
@@ -630,6 +695,55 @@ with current_tab:
         unsafe_allow_html=True,
     )
 
+with forecast_tab:
+    st.markdown("#### Next candidate spray windows")
+    st.warning(
+        "Forecast candidates are advisory, not GO decisions. Regional hourly data "
+        "cannot detect a future orchard inversion; verify the tower immediately "
+        "before and throughout spraying."
+    )
+    st.caption(
+        f"Looking after {selected_observed_at} for at least "
+        f"{application_duration:g} hours · wind 3–{forecast_max_wind:g} mph · "
+        f"temperature at or below {forecast_max_temperature:g}°F · "
+        "precipitation chance at or below 20% · daytime only"
+    )
+    if candidate_windows:
+        for index, window in enumerate(candidate_windows[:5], start=1):
+            with st.container(border=True):
+                st.markdown(
+                    f"**Candidate {index}: "
+                    f"{window.start:%A, %B %d at %I:%M %p}–"
+                    f"{window.end:%I:%M %p}**"
+                )
+                duration_col, wind_col, temperature_col, rain_col = st.columns(4)
+                duration_col.metric(
+                    "Duration", f"{window.duration_hours:.1f} hours"
+                )
+                wind_col.metric(
+                    "Forecast wind",
+                    f"{window.minimum_wind_mph:.0f}–"
+                    f"{window.maximum_wind_mph:.0f} mph",
+                )
+                temperature_col.metric(
+                    "Temperature",
+                    f"{window.minimum_temperature_f:.0f}–"
+                    f"{window.maximum_temperature_f:.0f} °F",
+                )
+                rain_col.metric(
+                    "Max precipitation",
+                    f"{window.maximum_precipitation_pct:.0f}%",
+                )
+                st.caption(
+                    f"Confidence: {window.confidence} · Final approval requires "
+                    "current multi-height readings."
+                )
+    else:
+        st.info(
+            "No candidate window meets the selected duration and application "
+            "limits in the remaining forecast."
+        )
+
 with notification_tab:
     notification_header, notification_action = st.columns([3, 1])
     notification_header.markdown("#### In-app notification history")
@@ -730,6 +844,13 @@ with method_tab:
         sensor update. Each update is assessed and logged automatically with its
         original observation time. Only complete, good-quality 5/30 ft or 5/15/30 ft
         profiles are included in the selected playback mode.
+
+        #### Candidate spray windows
+        The forecast engine groups contiguous daytime hours that meet the selected
+        duration, 3 mph minimum wind, volatility-adjusted maximum wind and temperature,
+        and 20% maximum precipitation chance. Confidence remains moderate because the
+        regional forecast has no future vertical temperature profile. Every new STOP
+        alert is followed by a notification containing the next candidate window.
         """
     )
 

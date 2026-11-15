@@ -36,6 +36,12 @@ and next controls to inspect one timestamp, or choose **Play** to advance
 automatically. Each playback timestamp is assessed and logged with its original
 observation time.
 
+The **Spray windows** tab groups qualifying hours from the simulated NWS forecast
+into advisory windows for the selected application duration. A new STOP alert
+also creates a follow-up notification with the next candidate window. Forecast
+windows cannot confirm a future inversion and always require an on-site
+multi-height check before spraying.
+
 ## Decision rules
 
 | Condition | Default result |
