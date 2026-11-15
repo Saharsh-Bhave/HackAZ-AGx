@@ -110,6 +110,11 @@ st.session_state.setdefault("preset", SCENARIOS[0].name)
 st.session_state.setdefault("playback_index", 0)
 st.session_state.setdefault("playback_running", False)
 st.session_state.setdefault("playback_delay", 2)
+st.session_state.setdefault("spray_active", False)
+st.session_state.setdefault("spray_started_at", None)
+st.session_state.setdefault("last_spray_status", None)
+st.session_state.setdefault("auto_stop_notice", None)
+st.session_state.setdefault("last_assessment_status", None)
 for field, default in next(iter(PRESETS.values())).items():
     st.session_state.setdefault(field, default)
 
@@ -383,35 +388,35 @@ assessment = (
     else assess_spray_risk(reading, application)
 )
 
-if st.session_state.data_source == LIVE_SOURCE:
-    live_signature = (
-        selected_observed_at,
-        st.session_state.sensor_mode,
-        application.product_name,
-        application.volatility.value,
-        application.droplet_size.value,
+current_status = assessment.status.name
+if (
+    not st.session_state.spray_active
+    and current_status == "GO"
+    and st.session_state.last_assessment_status != "GO"
+):
+    create_notification(
+        "GO conditions available",
+        (
+            "Current weather conditions pass the configured checks. Review the "
+            "product label and site, then use Start Spraying if appropriate."
+        ),
+        "success",
+        "go_available",
     )
-    if st.session_state.get("last_live_signature") != live_signature:
-        st.session_state.last_saved = save_assessment(
-            reading,
-            application,
-            assessment,
-            sensor_readings=display_readings,
-            observed_at=selected_observed_at,
-        )
-        st.session_state.last_live_signature = live_signature
+    st.toast("GO conditions available", icon="✅")
 
-with st.sidebar:
-    if (
-        st.session_state.data_source == SCENARIO_SOURCE
-        and st.button("Save assessment", type="primary", width="stretch")
-    ):
-        st.session_state.last_saved = save_assessment(
-            reading,
-            application,
-            assessment,
-            sensor_readings=display_readings,
-            observed_at=selected_observed_at,
+if (
+    st.session_state.spray_active
+    and st.session_state.last_spray_status
+    and current_status != st.session_state.last_spray_status
+):
+    if current_status == "STOP":
+        notification_level = "error"
+        notification_title = "Spraying automatically stopped"
+        notification_message = (
+            f"The dashboard ended the active spray session for "
+            f"{application.product_name} because conditions changed to STOP. "
+            "Confirm that the physical sprayer has been shut off."
         )
         event_type = "spray_auto_stopped"
     elif current_status == "GO":
@@ -447,6 +452,8 @@ with st.sidebar:
 st.session_state.last_assessment_status = current_status
 
 reading_signature = (
+    st.session_state.data_source,
+    selected_observed_at,
     st.session_state.sensor_mode,
     tuple(
         (
@@ -467,6 +474,7 @@ if st.session_state.get("last_logged_signature") != reading_signature:
         application,
         assessment,
         sensor_readings=display_readings,
+        observed_at=selected_observed_at,
     )
     st.session_state.last_logged_signature = reading_signature
 

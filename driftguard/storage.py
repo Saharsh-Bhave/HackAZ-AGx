@@ -54,6 +54,19 @@ def initialize_database(db_path: Path = DEFAULT_DB_PATH) -> None:
             connection.execute(
                 "ALTER TABLE assessments ADD COLUMN observed_at TEXT"
             )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TEXT NOT NULL,
+                level TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                is_read INTEGER NOT NULL DEFAULT 0
+            )
+            """
+        )
 
 
 def save_assessment(
