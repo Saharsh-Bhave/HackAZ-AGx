@@ -330,17 +330,37 @@ if (
         st.session_state.last_spray_status = current_status
 st.session_state.last_assessment_status = current_status
 
-with st.sidebar:
-    if st.button("Save assessment", type="primary", width="stretch"):
-        st.session_state.last_saved = save_assessment(
-            reading,
-            application,
-            assessment,
-            sensor_readings=display_readings,
+reading_signature = (
+    st.session_state.sensor_mode,
+    tuple(
+        (
+            sensor.height_ft,
+            sensor.temperature_f,
+            sensor.wind_speed_mph,
+            sensor.wind_direction_deg,
         )
+        for sensor in display_readings
+    ),
+    application.product_name,
+    application.volatility.value,
+    application.droplet_size.value,
+)
+if st.session_state.get("last_logged_signature") != reading_signature:
+    st.session_state.last_saved = save_assessment(
+        reading,
+        application,
+        assessment,
+        sensor_readings=display_readings,
+    )
+    st.session_state.last_logged_signature = reading_signature
+
+with st.sidebar:
     if "last_saved" in st.session_state:
         saved_time = datetime.fromisoformat(st.session_state.last_saved)
-        st.caption(f"Last saved: {saved_time:%Y-%m-%d %H:%M:%S} UTC")
+        st.caption(
+            f"Readings log automatically  \n"
+            f"Last logged: {saved_time:%Y-%m-%d %H:%M:%S} UTC"
+        )
 
 st.markdown('<div class="eyebrow">Orchard weather intelligence</div>', unsafe_allow_html=True)
 st.title("Orchard Drift Guard")
@@ -427,12 +447,6 @@ with current_tab:
                 ),
                 "success",
                 "spray_started",
-            )
-            st.session_state.last_saved = save_assessment(
-                reading,
-                application,
-                assessment,
-                sensor_readings=display_readings,
             )
             st.session_state.spray_active = True
             st.session_state.spray_started_at = started_at
@@ -545,7 +559,7 @@ with history_tab:
                         for sensor in profile
                     )
                     or "Legacy outer-sensor record",
-                    "Triggers": " | ".join(reasons) or "None",
+                    "Triggers": " | ".join(reasons) or "No risk triggers",
                 }
             )
         st.dataframe(display_records, width="stretch", hide_index=True)
@@ -589,5 +603,8 @@ with method_tab:
         A STOP result automatically ends the active software session and requires
         acknowledgement. Physical equipment still needs a connected hardware interlock
         to shut off automatically.
+
+        Every new sensor profile or application-setting change is automatically saved
+        to the assessment log with its GO, CAUTION, or STOP result and active triggers.
         """
     )
