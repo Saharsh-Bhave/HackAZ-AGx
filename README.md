@@ -30,6 +30,12 @@ Use **Sensor configuration** to compare the original 5/30 ft view with the
 for an inversion, checks wind limits at every height, and finds the largest
 speed or direction difference among all sensor pairs.
 
+Choose **Live timeline playback** under **Data source** to replay
+`data/tower_readings.csv` as a sensor feed. Use the timeline slider or previous
+and next controls to inspect one timestamp, or choose **Play** to advance
+automatically. Each playback timestamp is assessed and logged with its original
+observation time.
+
 ## Decision rules
 
 | Condition | Default result |

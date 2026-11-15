@@ -24,6 +24,7 @@ def initialize_database(db_path: Path = DEFAULT_DB_PATH) -> None:
             CREATE TABLE IF NOT EXISTS assessments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 recorded_at TEXT NOT NULL,
+                observed_at TEXT,
                 lower_temp_f REAL NOT NULL,
                 upper_temp_f REAL NOT NULL,
                 lower_wind_mph REAL NOT NULL,
@@ -49,19 +50,10 @@ def initialize_database(db_path: Path = DEFAULT_DB_PATH) -> None:
             connection.execute(
                 "ALTER TABLE assessments ADD COLUMN sensor_profile TEXT"
             )
-        connection.execute(
-            """
-            CREATE TABLE IF NOT EXISTS notifications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                created_at TEXT NOT NULL,
-                level TEXT NOT NULL,
-                event_type TEXT NOT NULL,
-                title TEXT NOT NULL,
-                message TEXT NOT NULL,
-                is_read INTEGER NOT NULL DEFAULT 0
+        if "observed_at" not in columns:
+            connection.execute(
+                "ALTER TABLE assessments ADD COLUMN observed_at TEXT"
             )
-            """
-        )
 
 
 def save_assessment(
@@ -70,6 +62,7 @@ def save_assessment(
     assessment: Assessment,
     db_path: Path = DEFAULT_DB_PATH,
     sensor_readings: Sequence[SensorReading] | None = None,
+    observed_at: str | None = None,
 ) -> str:
     initialize_database(db_path)
     recorded_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -77,15 +70,16 @@ def save_assessment(
         connection.execute(
             """
             INSERT INTO assessments (
-                recorded_at, lower_temp_f, upper_temp_f, lower_wind_mph,
+                recorded_at, observed_at, lower_temp_f, upper_temp_f, lower_wind_mph,
                 upper_wind_mph, lower_direction_deg, upper_direction_deg,
                 product_name, volatility, droplet_size, status,
                 inversion_delta_f, wind_speed_delta_mph,
                 wind_direction_delta_deg, alert_codes, reasons, sensor_profile
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 recorded_at,
+                observed_at,
                 reading.lower_temp_f,
                 reading.upper_temp_f,
                 reading.lower_wind_mph,
@@ -128,7 +122,7 @@ def get_assessments(
     if status and status != "All":
         query += " WHERE status = ?"
         parameters.append(status)
-    query += " ORDER BY recorded_at DESC LIMIT ?"
+    query += " ORDER BY recorded_at DESC, id DESC LIMIT ?"
     parameters.append(limit)
 
     with sqlite3.connect(db_path) as connection:
