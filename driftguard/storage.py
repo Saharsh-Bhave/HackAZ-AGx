@@ -138,3 +138,51 @@ def assessments_to_csv(records: list[dict[str, Any]]) -> str:
     writer.writeheader()
     writer.writerows(records)
     return output.getvalue()
+
+
+def create_notification(
+    title: str,
+    message: str,
+    level: str,
+    event_type: str,
+    db_path: Path = DEFAULT_DB_PATH,
+) -> str:
+    """Persist an in-app notification and return its UTC timestamp."""
+    if level not in {"success", "warning", "error", "info"}:
+        raise ValueError(f"Unsupported notification level: {level}")
+    initialize_database(db_path)
+    created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    with sqlite3.connect(db_path) as connection:
+        connection.execute(
+            """
+            INSERT INTO notifications (
+                created_at, level, event_type, title, message
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            (created_at, level, event_type, title, message),
+        )
+    return created_at
+
+
+def get_notifications(
+    limit: int = 100,
+    db_path: Path = DEFAULT_DB_PATH,
+) -> list[dict[str, Any]]:
+    initialize_database(db_path)
+    with sqlite3.connect(db_path) as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            """
+            SELECT * FROM notifications
+            ORDER BY created_at DESC, id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def mark_all_notifications_read(db_path: Path = DEFAULT_DB_PATH) -> None:
+    initialize_database(db_path)
+    with sqlite3.connect(db_path) as connection:
+        connection.execute("UPDATE notifications SET is_read = 1")
