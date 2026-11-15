@@ -7,11 +7,12 @@ from .models import (
     DropletSize,
     RiskFlags,
     RiskThresholds,
+    SensorReading,
     Status,
     Volatility,
     WeatherReading,
 )
-from .risk import assess_spray_risk, evaluate_weather_flags
+from .risk import assess_multi_height_risk, assess_spray_risk, evaluate_weather_flags
 
 __all__ = [
     "Alert",
@@ -20,9 +21,11 @@ __all__ = [
     "DropletSize",
     "RiskFlags",
     "RiskThresholds",
+    "SensorReading",
     "Status",
     "Volatility",
     "WeatherReading",
+    "assess_multi_height_risk",
     "assess_spray_risk",
     "evaluate_weather_flags",
 ]

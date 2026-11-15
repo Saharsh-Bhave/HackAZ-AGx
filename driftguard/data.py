@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .models import WeatherReading
+from .models import SensorReading, WeatherReading
 
 DEFAULT_SCENARIOS_PATH = Path(__file__).resolve().parents[1] / "data" / "scenarios.json"
 
@@ -19,6 +19,7 @@ class Scenario:
     description: str
     timestamp: str
     reading: WeatherReading
+    sensor_readings: tuple[SensorReading, ...]
     intended_hazards: tuple[str, ...]
 
 
@@ -46,6 +47,15 @@ def scenario_from_dict(raw: dict[str, Any]) -> Scenario:
         )
 
     lower, upper = sensors[0], sensors[-1]
+    sensor_readings = tuple(
+        SensorReading(
+            height_ft=float(sensor["height_ft"]),
+            temperature_f=float(sensor["temperature_f"]),
+            wind_speed_mph=float(sensor["wind_speed_mph"]),
+            wind_direction_deg=float(sensor["wind_direction_deg"]),
+        )
+        for sensor in sensors
+    )
     return Scenario(
         id=str(raw["id"]),
         name=str(raw["name"]),
@@ -61,6 +71,7 @@ def scenario_from_dict(raw: dict[str, Any]) -> Scenario:
             lower_height_ft=float(lower["height_ft"]),
             upper_height_ft=float(upper["height_ft"]),
         ),
+        sensor_readings=sensor_readings,
         intended_hazards=tuple(raw.get("intended_hazards", ())),
     )
 

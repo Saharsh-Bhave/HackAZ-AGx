@@ -25,6 +25,14 @@ class DropletSize(str, Enum):
 
 
 @dataclass(frozen=True)
+class SensorReading:
+    height_ft: float
+    temperature_f: float
+    wind_speed_mph: float
+    wind_direction_deg: float
+
+
+@dataclass(frozen=True)
 class WeatherReading:
     lower_temp_f: float
     upper_temp_f: float
